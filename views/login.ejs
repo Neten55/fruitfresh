@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login - Fruitify</title>
+  <style>
+    :root {
+      --main-color: #ff6347;
+      --accent-color: #4caf50;
+      --light-bg: #fdfdfd;
+    }
+
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #fff5e1;
+      color: #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+
+    .container {
+      background-color: white;
+      padding: 2.5rem 3rem;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+    }
+
+
+    h1 {
+      color: var(--accent-color);
+      margin-bottom: 1.5rem;
+    }
+
+
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+
+
+    input {
+      padding: 0.8rem 1rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 1rem;
+      transition: border-color 0.3s;
+    }
+
+
+    input:focus {
+      border-color: var(--main-color);
+      outline: none;
+    }
+
+
+    button {
+      background-color: var(--main-color);
+      color: white;
+      border: none;
+      padding: 0.8rem;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+
+    button:hover {
+      background-color: #e5533d;
+    }
+
+
+    .back-link {
+      margin-top: 1rem;
+      display: block;
+      color: var(--accent-color);
+      text-decoration: none;
+      font-size: 0.95rem;
+    }
+
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Welcome Back 🍓</h1>
+    <% if (message) { %>
+    <div style="background-color: #ffe4e1; padding: 10px; border-left: 5px solid #ff6347; border-radius: 6px; margin-bottom: 1rem;">
+        <%= message %>
+    </div>
+    <% } %>
+    <form action="/login" method="POST">
+      <input type="email" name="email" placeholder="Email address" required />
+      <input type="password" name="password" placeholder="Password" required />
+      <button type="submit">Login</button>
+    </form>
+    <a class="back-link" href="/signup">Don't have an account? Sign up</a>
+    <a class="back-link" href="/">← Back to Home</a>
+  </div>
+</body>
+</html>
