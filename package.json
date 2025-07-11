@@ -19,7 +19,7 @@
   },
   "homepage": "https://github.com/Neten55/fruitfresh#readme",
   "dependencies": {
-    "bcrypt": "^5.1.1",
+    "bcryptjs": "^2.4.3",
     "dotenv": "^16.5.0",
     "ejs": "^3.1.10",
     "express": "^5.1.0",
