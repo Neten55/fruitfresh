@@ -2,7 +2,7 @@
   "name": "fruitfresh",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js"
@@ -19,7 +19,7 @@
   },
   "homepage": "https://github.com/Neten55/fruitfresh#readme",
   "dependencies": {
-    "bcryptjs": "3.0.2",
+    "bcrypt": "^5.1.1",
     "dotenv": "^16.5.0",
     "ejs": "^3.1.10",
     "express": "^5.1.0",

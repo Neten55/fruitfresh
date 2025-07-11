@@ -5,6 +5,11 @@ const session = require('express-session');
 const path = require('path');
 
 dotenv.config();
+
+if (!process.env.SESSION_SECRET || !process.env.MONGO_URI) {
+    console.error('FATAL ERROR: Make sure SESSION_SECRET and MONGO_URI are defined in your environment variables.');
+    process.exit(1); // Exit the process with an error code
+}
 const app = express();  
 
 //view engine
@@ -15,7 +20,7 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static('public'));
 app.use(session({
-    secret: 'session_secret',
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
 
@@ -31,6 +36,7 @@ const authRoutes = require('./routes/authRoutes');
 app.use('/', authRoutes);
 
 //start server
-app.listen(process.env.PORT, () => {
-    console.log(`Server is running on port ${process.env.PORT}`);
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 }); 
