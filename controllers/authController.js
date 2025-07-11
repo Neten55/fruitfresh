@@ -1,109 +1,122 @@
 const User = require('../models/userModel');
-const crypto = require('crypto');
-const nodemailer = require('nodemailer');
-require('dotenv').config();
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const sendVerificationEmail = require('../helpers/sendVerificationEmail');
 
-// Setup nodemailer transporter
-// IMPORTANT: Use environment variables for credentials in your .env file
-// For development, you can use a service like Ethereal or Mailtrap
-const transporter = nodemailer.createTransport({
-    service: 'gmail', // or another email service
-    auth: {
-        user: process.env.EMAIL_USER, // e.g., 'your.email@gmail.com'
-        pass: process.env.EMAIL_PASS, // e.g., an app-specific password for gmail
-    },
-});
 
+// Landing Page
 exports.getLanding = (req, res) => {
-    // Assuming you have a landing.ejs view
-    res.render('landing');
+  res.render('landing');
 };
 
+
+// GET Signup Form
 exports.getSignup = (req, res) => {
-    // Assuming you have a signup.ejs view
-    res.render('signup');
+  res.render('signup', {message: null});
 };
 
+
+// POST Signup Form
 exports.postSignup = async (req, res) => {
-    const { email, password } = req.body;
+  const { name, age, email, password } = req.body;
 
-    try {
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            // Note: In a production app, you might not want to reveal that the email is already in use.
-            return res.status(400).send('Email already in use.');
-        }
 
-        const emailToken = crypto.randomBytes(64).toString('hex');
-
-        const newUser = new User({ email, password, emailToken });
-        await newUser.save();
-
-        // Send verification email
-        const verificationLink = `http://${req.headers.host}/verify-email?token=${emailToken}`;
-        const mailOptions = {
-            from: `"FruitFresh" <${process.env.EMAIL_USER}>`,
-            to: newUser.email,
-            subject: 'Verify Your Email Address',
-            html: `<p>Hello,</p><p>Please verify your email by clicking on the link below:</p><a href="${verificationLink}">${verificationLink}</a>`,
-        };
-
-        // You can uncomment the line below once you have configured your email transporter
-        // await transporter.sendMail(mailOptions);
-
-        res.send('Registration successful! Please check your email to verify your account.');
-
-    } catch (error) {
-        console.error('Signup Error:', error);
-        res.status(500).send('Error during registration.');
+  try {
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.render('signup', { message: 'User already exists. Try logging in.' });
     }
+
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const verificationToken = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: '1d' });
+
+
+    const user = new User({
+      name,
+      age,
+      email,
+      password: hashedPassword,
+      verificationToken,
+      role: 'user' // optional as 'user' is default in schema
+    });
+
+
+    await user.save();
+    await sendVerificationEmail(email, verificationToken);
+
+
+    res.render('signup', { message: 'Signup successful! Please check your email to verify your account.' });
+  } catch (err) {
+    console.error("Error signing up", err);
+    return res.render('signup', { message: 'Server error during signup.' });
+  }
 };
 
+
+// GET Login Form
 exports.getLogin = (req, res) => {
-    // Assuming you have a login.ejs view
-    res.render('login');
+  res.render('login', {message: null});
 };
 
+
+// POST Login
 exports.postLogin = async (req, res) => {
-    const { email, password } = req.body;
+  const { email, password } = req.body;
 
-    try {
-        const user = await User.findOne({ email });
-        if (!user || !(await user.comparePassword(password))) {
-            return res.status(401).send('Invalid email or password.');
-        }
 
-        if (!user.isVerified) {
-            return res.status(401).send('Please verify your email before logging in.');
-        }
+  try {
+    const user = await User.findOne({ email });
 
-        // Set up session
-        req.session.userId = user._id;
-        res.send('Login successful!'); // Ideally, redirect to a protected page e.g., res.redirect('/dashboard');
 
-    } catch (error) {
-        console.error('Login Error:', error);
-        res.status(500).send('Error during login.');
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res.render('login', { message: 'Invalid email or password.' });
     }
+
+
+    if (!user.isVerified) {
+      return res.render('login', { message: 'Please verify your email before logging in.'});
+    }
+
+
+    req.session.user = user;
+
+
+    if (user.role === 'admin') {
+      return res.redirect('/admin/dashboard');
+    } else {
+      return res.redirect('/user/dashboard');
+    }
+   
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error during login.');
+  }
 };
 
+
+// Email Verification Handler
 exports.verifyEmail = async (req, res) => {
-    const { token } = req.query;
+  const { token } = req.query;
 
-    try {
-        const user = await User.findOne({ emailToken: token });
 
-        if (!user) {
-            return res.status(400).send('Invalid or expired verification link.');
-        }
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findOne({ email: decoded.email });
 
-        user.emailToken = undefined; // Use undefined to have MongoDB remove the field
-        user.isVerified = true;
-        await user.save();
 
-        res.send('Email verified successfully! You can now log in.'); // e.g., res.redirect('/login');
-    } catch (error) {
-        console.error('Email Verification Error:', error);
-        res.status(500).send('Error verifying email.');
-    }
+    if (!user) return res.render('verify', { message: 'Invalid verification link.' });
+if (user.isVerified) return res.render('verify', { message: 'Email already verified.' });
+
+
+    user.isVerified = true;
+    user.verificationToken = undefined;
+    await user.save();
+
+
+    res.render('verify', { email: user.email , message: 'Email verified successfully! You can now log in.' });
+  } catch (err) {
+    console.error(err);
+    res.send('Email verification failed or token expired.');
+  }
 };

@@ -15,8 +15,7 @@ await transporter.sendMail({
     from: process.env.EMAIL_USER,
     to: email,
     subject: 'Verify your email',
-    html: `<p>Click the link below to verify your email:</p>
-           <a href="${url}">Verify Email</a>`
+    html: `<p>Click <a href="${url}">here</a> toVerify email.</p>`
 });
 }
 
